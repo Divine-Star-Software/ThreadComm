@@ -1,0 +1,38 @@
+{
+  "sources": [
+    {
+      "dir": "D:/DSSoftware/DSLIBS/serverComm/out",
+      "fileExtensions": [
+        "js",
+        "d.ts"
+      ],
+      "id": "main"
+    }
+  ],
+  "outputs": [
+    {
+      "dir": "D:/DSSoftware/DSLIBS/serverComm/testing/electron/out",
+      "sourceID": "main",
+      "codeSection": "All",
+      "keepComments": true
+    },
+    {
+      "dir": "D:/DSSoftware/DSLIBS/serverComm/testing/electron/app/out",
+      "sourceID": "main",
+      "codeSection": "All",
+      "keepComments": true
+    },
+    {
+      "dir": "D:/DSSoftware/DSLIBS/serverComm/testing/server/out",
+      "sourceID": "main",
+      "codeSection": "All",
+      "keepComments": true
+    }
+  ],
+  "codeSections": {
+    "all": {
+      "start": "@ds-all-start",
+      "end": "@ds-all-end"
+    }
+  }
+}

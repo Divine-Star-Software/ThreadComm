@@ -1,0 +1,20 @@
+{
+  "name": "ds-element-tree",
+  "version": "0.0.8",
+  "description": "A TypeScript library for creating an interactive UI.",
+  "type": "module",
+  "main": "out/index.js",
+  "types": "out/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "url": "https://github.com/Divine-Star-Software/ElementTree"
+  },
+  "homepage": "https://github.com/Divine-Star-Software/ElementTree",
+  "author": "Divine Star Software",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.6.2"
+  }
+}

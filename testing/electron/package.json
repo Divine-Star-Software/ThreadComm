@@ -1,0 +1,19 @@
+{
+  "name": "appcomponents",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./appstart/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "css": "sass --watch scss/index.scss:app/css/style.css",
+    "compile-css": "sass scss/index.scss:app/css/style.css"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^17.1.0",
+    "typescript": "^4.6.2"
+  },
+  "dependencies": {}
+}

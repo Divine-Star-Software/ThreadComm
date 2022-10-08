@@ -1,0 +1,25 @@
+{
+    "sources": [
+        {
+            "dir": "D:/DSSoftware/DSLIBS/elementTree/electron/Examples",
+            "fileExtensions": [
+                "css"
+            ],
+            "id": "main"
+        }
+    ],
+    "outputs": [
+        {
+            "dir": "D:/DSSoftware/DSLIBS/elementTree/electron/app/js",
+            "sourceID": "main",
+            "codeSection": "All",
+            "keepComments": true
+        }
+    ],
+    "codeSections": {
+        "all": {
+            "start": "@ds-all-start",
+            "end": "@ds-all-end"
+        }
+    }
+}
