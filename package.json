@@ -1,7 +1,7 @@
 {
-  "name": "ds-element-tree",
+  "name": "threadcomm",
   "version": "0.0.8",
-  "description": "A TypeScript library for creating an interactive UI.",
+  "description": "A TypeScript library for multi-threading communication, taksks, and queues.",
   "type": "module",
   "main": "out/index.js",
   "types": "out/index.d.ts",
