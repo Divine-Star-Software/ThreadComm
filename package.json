@@ -9,9 +9,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
-    "url": "https://github.com/Divine-Star-Software/ElementTree"
+    "url": "https://github.com/Divine-Star-Software/ThreadComm"
   },
-  "homepage": "https://github.com/Divine-Star-Software/ElementTree",
+  "homepage": "https://github.com/Divine-Star-Software/ThreadComm",
   "author": "Divine Star Software",
   "license": "MIT",
   "devDependencies": {
