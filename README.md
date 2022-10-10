@@ -10,7 +10,11 @@ Main Thread :
 
 ```ts
 import { ThreadComm } from "../out/ThreadComm.js";
-await ThreadComm.$INIT("render");
+
+await ThreadComm.$INIT("main");
+ThreadComm.parent.listenForMessage("hello", (data) => {
+	console.log(data);
+});
 const tasksCommManager = ThreadComm.createCommManager({
 	name: "tasks",
 	onPortSet: (comm, portName) => {},
@@ -23,13 +27,19 @@ for (let i = 0; i < numTasksThreads; i++) {
 	);
 }
 tasksCommManager.addPorts(tasksWorkers);
+tasksCommManager.listenForMessage("hello", (data) => {
+	console.log(data);
+});
 const nexusWorker = new Worker(new URL("./nexus/nexus.js", import.meta.url), {
 	type: "module",
 });
 const nexusComm = ThreadComm.createComm("nexus");
 nexusComm.setPort(nexusWorker);
-
+nexusComm.listenForMessage("hello", (data) => {
+	console.log(data);
+});
 tasksCommManager.connectToCom(nexusComm);
+
 ```
 
 Tasks Thread :
@@ -55,7 +65,13 @@ nexusComm.listenForMessage("sup", (data) => {
 });
 await ThreadComm.$INIT("tasks");
 
+
+
+setTimeout(()=>{
+    ThreadComm.parent.sendMessage("hello", ["hello from " + ThreadComm.threadName]);
+},2000);
 console.log("[tasks]");
+
 ```
 
 
@@ -78,6 +94,10 @@ const sayHellopQueue = tasksCommManager.addQueue<string>(
 	"say-hello"
 );
 
+setTimeout(() => {
+	ThreadComm.parent.sendMessage("hello", ["hello from nexus"]);
+}, 2000);
+
 setTimeout(async () => {
 	let i = 10;
 	while (i--) {
@@ -88,12 +108,10 @@ setTimeout(async () => {
 	while (totalHellos--) {
 		sayHellopQueue.add("sup-" + totalHellos);
 	}
-	console.log(sayHellopQueue.__queueData);
 	sayHellopQueue.run();
 	await sayHellopQueue.awaitAll();
 	console.log("ALL DONE");
-}, 2000);
+}, 3000);
 
 console.log("[nexus]");
-
 ```

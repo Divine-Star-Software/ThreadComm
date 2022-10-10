@@ -18,4 +18,9 @@ nexusComm.listenForMessage("sup", (data) => {
 });
 await ThreadComm.$INIT("tasks");
 
+
+
+setTimeout(()=>{
+    ThreadComm.parent.sendMessage("hello", ["hello from " + ThreadComm.threadName]);
+},2000);
 console.log("[tasks]");

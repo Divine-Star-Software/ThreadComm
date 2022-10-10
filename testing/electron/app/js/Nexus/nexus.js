@@ -9,6 +9,9 @@ tasksCommManager.listenForMessage("say-sup", (data) => {
     console.log(data);
 });
 const sayHellopQueue = tasksCommManager.addQueue("say-hello", "say-hello");
+setTimeout(() => {
+    ThreadComm.parent.sendMessage("hello", ["hello from nexus"]);
+}, 2000);
 setTimeout(async () => {
     let i = 10;
     while (i--) {
@@ -19,9 +22,8 @@ setTimeout(async () => {
     while (totalHellos--) {
         sayHellopQueue.add("sup-" + totalHellos);
     }
-    console.log(sayHellopQueue.__queueData);
     sayHellopQueue.run();
     await sayHellopQueue.awaitAll();
     console.log("ALL DONE");
-}, 2000);
+}, 3000);
 console.log("[nexus]");

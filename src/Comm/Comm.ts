@@ -40,10 +40,12 @@ export class CommBase {
 	__handleMessage(data: any, event: any) {
 		if (ThreadComm.__isInternalMessage(data)) {
 			ThreadComm.__handleInternalMessage(data, event);
+			this.onMessage(event);
 			return;
 		}
 		if (ThreadComm.__isTasks(data)) {
 			ThreadComm.__handleTasksMessage(data);
+			this.onMessage(event);
 			return;
 		}
 		if (this._manager) {

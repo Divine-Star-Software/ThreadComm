@@ -11,7 +11,7 @@ export declare const ThreadComm: {
     commManageras: Record<string, CommManager>;
     tasks: Record<string, Task<any>>;
     queues: Record<string, SyncedQueue>;
-    context: CommBase;
+    parent: CommBase;
     __internal: Record<number, Record<number, (data: any, event: any) => void>>;
     __initalized: boolean;
     __expectedPorts: Record<string, boolean>;

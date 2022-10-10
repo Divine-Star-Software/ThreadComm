@@ -13,15 +13,15 @@ export const ThreadComm = {
     commManageras: {},
     tasks: {},
     queues: {},
-    context: new CommBase(""),
+    parent: new CommBase(""),
     __internal: {},
     __initalized: false,
     __expectedPorts: {},
     async $INIT(threadName) {
         this.threadName = threadName;
-        this.context.name = threadName;
+        this.parent.name = threadName;
         const port = await this.getWorkerPort();
-        this.context.setPort(port);
+        this.parent.setPort(port);
         this.__initalized = true;
     },
     getSyncedQueue(queueId) {

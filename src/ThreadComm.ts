@@ -16,7 +16,7 @@ export const ThreadComm = {
 	commManageras: <Record<string, CommManager>>{},
 	tasks: <Record<string, Task<any>>>{},
 	queues: <Record<string, SyncedQueue>>{},
-	context: new CommBase(""),
+	parent: new CommBase(""),
 	__internal: <
 		Record<number, Record<number, (data: any, event: any) => void>>
 	>{},
@@ -26,9 +26,9 @@ export const ThreadComm = {
 
 	async $INIT(threadName: string) {
 		this.threadName = threadName;
-		this.context.name = threadName;
+		this.parent.name = threadName;
 		const port = await this.getWorkerPort();
-		this.context.setPort(port);
+		this.parent.setPort(port);
 		this.__initalized = true;
 	},
 
