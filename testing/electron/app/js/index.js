@@ -25,3 +25,4 @@ nexusComm.listenForMessage("hello", (data) => {
     console.log(data);
 });
 tasksCommManager.connectToCom(nexusComm);
+tasksCommManager.runTask("say-hello", ["from the main thread"]);

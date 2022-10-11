@@ -1,4 +1,4 @@
-import { CommPortTypes } from "Meta/Comm/Comm.types";
+import { CommPortTypes } from "../Comm/Comm.types";
 
 export type CommManagerData = {
     name: string;

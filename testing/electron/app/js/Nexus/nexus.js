@@ -1,5 +1,4 @@
 import { ThreadComm } from "../../out/ThreadComm.js";
-ThreadComm.expectPorts(["tasks"]);
 const tasksCommManager = ThreadComm.createCommManager({
     name: "tasks",
     onPortSet(port, commName) { },
@@ -12,7 +11,7 @@ const sayHellopQueue = tasksCommManager.addQueue("say-hello", "say-hello");
 setTimeout(() => {
     ThreadComm.parent.sendMessage("hello", ["hello from nexus"]);
 }, 2000);
-setTimeout(async () => {
+/* setTimeout(async () => {
     let i = 10;
     while (i--) {
         tasksCommManager.runTask("say-hello", "sup");
@@ -26,4 +25,7 @@ setTimeout(async () => {
     await sayHellopQueue.awaitAll();
     console.log("ALL DONE");
 }, 3000);
+ */
+await tasksCommManager.waitTillAllAreReady();
+tasksCommManager.syncData("nexus-data", [0, 1, 2, 3, 4]);
 console.log("[nexus]");

@@ -1,6 +1,6 @@
 import type { CommPortTypes } from "../Meta/Comm/Comm.types";
-import type { MessageFunction, MessageRecord } from "Meta/Util.types.js";
-import type { CommManager } from "Manager/CommManager.js";
+import type { MessageFunction, MessageRecord } from "../Meta/Util.types.js";
+import type { CommManager } from "../Manager/CommManager.js";
 export declare class CommBase {
     name: string;
     managerName: string;
@@ -10,8 +10,9 @@ export declare class CommBase {
     messageFunctions: MessageRecord;
     _manager: CommManager | null;
     constructor(name: string, managerName?: string, commManager?: CommManager | null);
+    destroy(): void;
     isReady(): boolean;
-    sendReadySignal(): void;
+    __sendReadySignal(): void;
     __onSetPortRun: (port: CommPortTypes) => void;
     isPortSet(): boolean;
     onSetPort(set: (port: CommPortTypes) => void): void;
@@ -24,6 +25,8 @@ export declare class CommBase {
     runTasks<T>(id: string, data: T, queue?: string): void;
     __syncQueue(id: string, sab: SharedArrayBuffer): void;
     __unSyqncQueue(id: string): void;
+    syncData<T>(dataType: string, data: T, transfers?: any[]): void;
+    unSyncData<T>(dataType: string, data: T, transfers?: any[]): void;
+    waitTillReady(): Promise<boolean>;
     onMessage(event: any): void;
 }
-export declare function CreateComm<T>(name: string, mergeObject: T): CommBase & T;

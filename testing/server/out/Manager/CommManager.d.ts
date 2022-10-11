@@ -1,6 +1,6 @@
-import type { CommPortTypes } from "Meta/Comm/Comm.types";
-import type { MessageFunction, MessageRecord } from "Meta/Util.types.js";
-import type { CommManagerData } from "Meta/Manager/Manager.types.js";
+import type { CommPortTypes } from "../Meta/Comm/Comm.types";
+import type { MessageFunction, MessageRecord } from "../Meta/Util.types.js";
+import type { CommManagerData } from "../Meta/Manager/Manager.types.js";
 import { CommBase } from "../Comm/Comm.js";
 import { QueueManager } from "../Queue/QueueManager.js";
 export declare class CommManager {
@@ -13,7 +13,9 @@ export declare class CommManager {
     constructor(data: CommManagerData);
     __throwError(message: string): void;
     connectToCom(commToConnectTo: CommBase): void;
+    destroyAll(): void;
     isReady(): boolean;
+    waitTillAllAreReady(): Promise<boolean>;
     addPort(port: CommPortTypes): void;
     addPorts(ports: CommPortTypes[]): void;
     addComms(comms: CommBase[]): void;
@@ -22,10 +24,12 @@ export declare class CommManager {
     listenForMessage(message: string | number, run: MessageFunction): void;
     sendMessageToAll(message: string | number, data?: any[], transfers?: any[]): void;
     runTasksForAll<T>(id: string, data: T, queue?: string): void;
-    runTask<T>(id: string, data: T, queue?: string): number;
+    runTask<T>(id: string, data: T, threadNumber?: number, queue?: string): number | undefined;
     __handleCount(): number;
     addQueue<T>(id: string, associatedTasksId: string): QueueManager<T>;
     getQueue<T>(id: string): QueueManager<T>;
     __syncQueue(id: string, sab: SharedArrayBuffer): void;
     __unSyncQueue(id: string): void;
+    syncData<T>(dataType: string, data: T): void;
+    unSyncData<T>(dataType: string, data: T): void;
 }

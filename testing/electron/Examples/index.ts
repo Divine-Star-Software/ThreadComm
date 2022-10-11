@@ -4,6 +4,8 @@ await ThreadComm.$INIT("main");
 ThreadComm.parent.listenForMessage("hello", (data) => {
 	console.log(data);
 });
+
+
 const tasksCommManager = ThreadComm.createCommManager({
 	name: "tasks",
 	onPortSet: (comm, portName) => {},
@@ -28,3 +30,5 @@ nexusComm.listenForMessage("hello", (data) => {
 	console.log(data);
 });
 tasksCommManager.connectToCom(nexusComm);
+
+tasksCommManager.runTask("say-hello", ["from the main thread"]);

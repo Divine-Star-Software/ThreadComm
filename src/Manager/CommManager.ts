@@ -1,12 +1,13 @@
 //types
-import type { CommPortTypes } from "Meta/Comm/Comm.types";
-import type { MessageFunction, MessageRecord } from "Meta/Util.types.js";
-import type { CommManagerData } from "Meta/Manager/Manager.types.js";
+import type { CommPortTypes } from "../Meta/Comm/Comm.types";
+import type { MessageFunction, MessageRecord } from "../Meta/Util.types.js";
+import type { CommManagerData } from "../Meta/Manager/Manager.types.js";
 //constants
 import { TCMessageHeaders, TCInternalMessages } from "../Constants/Messages.js";
 //classes
 import { CommBase } from "../Comm/Comm.js";
 import { QueueManager } from "../Queue/QueueManager.js";
+import { ThreadComm } from "../ThreadComm.js";
 
 export class CommManager {
 	_totalComms = 0;
@@ -26,11 +27,19 @@ export class CommManager {
 	__throwError(message: string) {
 		throw new Error(`[ThreadCommManager : ${this.__data.name}] ${message}`);
 	}
+
 	connectToCom(commToConnectTo: CommBase) {
 		for (const comm of this.__comms) {
 			comm.connectToComm(commToConnectTo);
 		}
 	}
+
+	destroyAll() {
+		for (const comm of this.__comms) {
+			comm.destroy();
+		}
+	}
+
 	isReady() {
 		let ready = true;
 		for (const comm of this.__comms) {
@@ -39,12 +48,26 @@ export class CommManager {
 		return ready;
 	}
 
+	waitTillAllAreReady() {
+		const self = this;
+		return new Promise<boolean>((resolve, reject) => {
+			const inte = setInterval(() => {
+				if (this.isReady()) {
+					clearInterval(inte);
+					resolve(true);
+				}
+			}, 1);
+		});
+	}
+
 	addPort(port: CommPortTypes) {
 		this._totalComms++;
 		const newCommName = `${this.__data.name}-${this._totalComms}`;
 		const newComm = new CommBase(newCommName, this.__data.name, this);
+		ThreadComm.addComm(newComm);
 		newComm.setPort(port);
 		this.__data.onPortSet(port, newCommName);
+
 		this.__comms.push(newComm);
 		newComm.sendMessage(TCMessageHeaders.internal, [
 			TCInternalMessages.nameThread,
@@ -90,10 +113,15 @@ export class CommManager {
 		}
 	}
 
-	runTask<T>(id: string, data: T, queue?: string) {
-		const comm = this.__comms[this._currentCom];
-		comm.runTasks(id, data, queue);
-		return this.__handleCount();
+	runTask<T>(id: string, data: T, threadNumber = -1, queue?: string) {
+		if (threadNumber < 0) {
+			const comm = this.__comms[this._currentCom];
+			comm.runTasks(id, data, queue);
+			return this.__handleCount();
+		} else {
+			const comm = this.__comms[threadNumber];
+			comm.runTasks(id, data, queue);
+		}
 	}
 
 	__handleCount() {
@@ -112,7 +140,7 @@ export class CommManager {
 		const newQueue = new QueueManager<T>(
 			id,
 			(data, queueId) => {
-				this.runTask(associatedTasksId, data, queueId);
+				this.runTask(associatedTasksId, data, -1, queueId);
 			},
 			this
 		);
@@ -137,6 +165,19 @@ export class CommManager {
 	__unSyncQueue(id: string) {
 		for (const comm of this.__comms) {
 			comm.__unSyqncQueue(id);
+		}
+	}
+
+	syncData<T>(dataType: string, data: T) {
+		console.log("SYNC DATA");
+		for (const comm of this.__comms) {
+			comm.syncData(dataType, data);
+		}
+	}
+
+	unSyncData<T>(dataType: string, data: T) {
+		for (const comm of this.__comms) {
+			comm.unSyncData(dataType, data);
 		}
 	}
 }
