@@ -30,7 +30,7 @@ export declare const ThreadComm: {
     __isInternalMessage(data: any[]): boolean;
     __handleTasksMessage(data: any[]): Promise<void>;
     __isTasks(data: any[]): boolean;
-    registerTasks<T_1>(id: string, run: (data: T_1) => void): void;
+    registerTasks<T_1>(id: string | number, run: (data: T_1) => void): Task<T_1>;
     __hanldeDataSyncMessage(data: any[]): Promise<void>;
     __isDataSync(data: any[]): boolean;
     listenForDataSync<T_2>(dataType: string, onSync: (data: T_2) => void, onUnSync: (data: T_2) => void): void;

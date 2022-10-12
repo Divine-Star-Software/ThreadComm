@@ -107,20 +107,31 @@ export class CommManager {
 		}
 	}
 
-	runTasksForAll<T>(id: string, data: T, queue?: string) {
+	runTasksForAll<T>(
+		id: string,
+		data: T,
+		transfers: any[] = [],
+		queue?: string
+	) {
 		for (const comm of this.__comms) {
-			comm.runTasks(id, data, queue);
+			comm.runTasks(id, data, transfers, queue);
 		}
 	}
 
-	runTask<T>(id: string, data: T, threadNumber = -1, queue?: string) {
+	runTask<T>(
+		id: string | number,
+		data: T,
+		transfers: any[] = [],
+		threadNumber = -1,
+		queue?: string
+	) {
 		if (threadNumber < 0) {
 			const comm = this.__comms[this._currentCom];
-			comm.runTasks(id, data, queue);
+			comm.runTasks(id, data, transfers, queue);
 			return this.__handleCount();
 		} else {
 			const comm = this.__comms[threadNumber];
-			comm.runTasks(id, data, queue);
+			comm.runTasks(id, data, transfers, queue);
 		}
 	}
 
@@ -140,7 +151,7 @@ export class CommManager {
 		const newQueue = new QueueManager<T>(
 			id,
 			(data, queueId) => {
-				this.runTask(associatedTasksId, data, -1, queueId);
+				this.runTask(associatedTasksId, data, [], -1, queueId);
 			},
 			this
 		);

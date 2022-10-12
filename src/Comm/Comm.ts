@@ -149,8 +149,8 @@ export class CommBase {
 		);
 	}
 
-	runTasks<T>(id: string, data: T, queue?: string) {
-		this.sendMessage(TCMessageHeaders.runTasks, [id, queue, data]);
+	runTasks<T>(id: string | number, data: T, transfers: any[] = [], queue?: string) {
+		this.sendMessage(TCMessageHeaders.runTasks, [id, queue, data], transfers);
 	}
 
 	__syncQueue(id: string, sab: SharedArrayBuffer) {

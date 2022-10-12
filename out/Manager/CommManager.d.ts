@@ -23,8 +23,8 @@ export declare class CommManager {
     __handleManagerMessage(data: any, event: any): void;
     listenForMessage(message: string | number, run: MessageFunction): void;
     sendMessageToAll(message: string | number, data?: any[], transfers?: any[]): void;
-    runTasksForAll<T>(id: string, data: T, queue?: string): void;
-    runTask<T>(id: string, data: T, threadNumber?: number, queue?: string): number | undefined;
+    runTasksForAll<T>(id: string, data: T, transfers?: any[], queue?: string): void;
+    runTask<T>(id: string | number, data: T, transfers?: any[], threadNumber?: number, queue?: string): number | undefined;
     __handleCount(): number;
     addQueue<T>(id: string, associatedTasksId: string): QueueManager<T>;
     getQueue<T>(id: string): QueueManager<T>;

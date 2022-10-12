@@ -109,7 +109,7 @@ export const ThreadComm = {
 		const tasksId = data.shift();
 		//remove queue id
 		const queueId = data.shift();
-		await this._tasks[tasksId].run(data);
+		await this._tasks[tasksId].run(data[0]);
 		//complete queue
 		if (queueId) {
 			this.getSyncedQueue(queueId).subtractFromCount();
@@ -121,8 +121,10 @@ export const ThreadComm = {
 		);
 	},
 
-	registerTasks<T>(id: string, run: (data: T) => void) {
-		this._tasks[id] = new Task<T>(id, run);
+	registerTasks<T>(id: string | number, run: (data: T) => void) {
+		const tasks = new Task<T>(id, run);
+		this._tasks[id] = tasks;
+		return tasks;
 	},
 
 	async __hanldeDataSyncMessage(data: any[]) {

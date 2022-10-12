@@ -120,8 +120,8 @@ export class CommBase {
             channel.port2,
         ], [channel.port2]);
     }
-    runTasks(id, data, queue) {
-        this.sendMessage(TCMessageHeaders.runTasks, [id, queue, data]);
+    runTasks(id, data, transfers = [], queue) {
+        this.sendMessage(TCMessageHeaders.runTasks, [id, queue, data], transfers);
     }
     __syncQueue(id, sab) {
         this.sendMessage(TCMessageHeaders.internal, [
