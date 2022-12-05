@@ -3,7 +3,7 @@ import { Queue } from "../tools/Queue.js";
 
 export class QueueManager<T> {
 	__queueData: Record<
-		string,
+		string | number,
 		{
 			queue: Queue<T>;
 			map: Record<string, boolean>;
@@ -12,12 +12,16 @@ export class QueueManager<T> {
 		}
 	> = {};
 	constructor(
-		public id: string,
+		public id: string | number,
 		public onRun: (data: T, queueId: string) => void,
-		public _manager: CommManager
+		public _manager: CommManager,
+		public getQueueKey: ((data: T) => string) | null = null
 	) {}
 
 	__getQueueKey(data: any) {
+		if (this.getQueueKey !== null) {
+			return this.getQueueKey(data);
+		}
 		if (Array.isArray(data)) {
 			return data.toString();
 		}
@@ -35,8 +39,9 @@ export class QueueManager<T> {
 		return this.__queueData[id];
 	}
 
-	addQueue(queueId: string) {
+	addQueue(queueId: string | number) {
 		const sab = new SharedArrayBuffer(4);
+		if (this.__queueData[queueId]) return false;
 		this.__queueData[queueId] = {
 			queue: new Queue<T>(),
 			map: {},
@@ -45,16 +50,19 @@ export class QueueManager<T> {
 		};
 		const syncId = this._getSyncId(queueId);
 		this._manager.__syncQueue(syncId, sab);
+		return true;
 	}
 
-	_getSyncId(queueId: string) {
-		return `${this._manager.__data.name}-${this.id}-${queueId}`;
+	_getSyncId(queueId: string | number) {
+		return `${this.id}-${queueId}`;
 	}
 
-	removeQueue(queueId: string) {
-		if (!this.__queueData[queueId]) return;
+	removeQueue(queueId: string | number) {
+		if (!this.__queueData[queueId]) return false;
 		delete this.__queueData[queueId];
-		this._manager.__unSyncQueue(queueId);
+		const syncId = this._getSyncId(queueId);
+		this._manager.__unSyncQueue(syncId);
+		return true;
 	}
 
 	add(data: T, queueId = "main") {
@@ -72,7 +80,7 @@ export class QueueManager<T> {
 		const queue = queueData.queue;
 		const state = queueData.state;
 		const syncId = this._getSyncId(queueId);
-		while (queue.first) {
+		while (true) {
 			const data = queue.dequeue();
 			if (!data) break;
 			if (filter) {
@@ -87,22 +95,38 @@ export class QueueManager<T> {
 			Atomics.add(state, 0, 1);
 			this.onRun(data, syncId);
 		}
+		this.__queueData[queueId].map = {};
 		if (filter) {
 			this.__queueData[queueId].queue = queue;
 			this.__queueData[queueId].map = newMap;
 		}
 	}
 
+	runAndAwait(queueId = "main", filter?: (data: T) => 0 | 1 | 2) {
+		this.run(queueId, filter);
+		return this.awaitAll(queueId);
+	}
+
 	awaitAll(queueId: string = "main") {
 		const queueData = this.__getQueueData(queueId);
 		return new Promise<boolean>((resolve, reject) => {
-			const inte =  setInterval(() => {
+			const inte = setInterval(() => {
 				if (Atomics.load(queueData.state, 0) == 0) {
 					clearInterval(inte);
 					resolve(true);
 				}
 			}, 1);
 		});
+	}
+
+	onDone(queueId: string = "main", run: Function) {
+		const queueData = this.__getQueueData(queueId);
+		const inte = setInterval(() => {
+			if (Atomics.load(queueData.state, 0) == 0) {
+				clearInterval(inte);
+				run();
+			}
+		}, 1);
 	}
 
 	isDone(queueId: string = "main") {

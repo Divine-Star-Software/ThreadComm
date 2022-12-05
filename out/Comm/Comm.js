@@ -1,5 +1,6 @@
 import { ThreadComm } from "../ThreadComm.js";
 import { TCMessageHeaders, TCInternalMessages, TCDataSyncMessages, } from "../Constants/Messages.js";
+import { PromiseTasks } from "../Tasks/PromiseTasks.js";
 export class CommBase {
     name;
     managerName;
@@ -59,7 +60,7 @@ export class CommBase {
         }
         const message = data[0];
         if (this.messageFunctions[message]) {
-            this.messageFunctions[message](data, event);
+            this.messageFunctions[message].forEach((_) => _(data, event));
         }
         this.onMessage(event);
     }
@@ -103,7 +104,8 @@ export class CommBase {
         this.port.postMessage([message, ...data]);
     }
     listenForMessage(message, run) {
-        this.messageFunctions[message] = run;
+        this.messageFunctions[message] ??= [];
+        this.messageFunctions[message].push(run);
     }
     connectToComm(commToConnectTo) {
         const channel = new MessageChannel();
@@ -120,12 +122,23 @@ export class CommBase {
             channel.port2,
         ], [channel.port2]);
     }
-    runTasks(id, data, transfers = [], queue) {
-        this.sendMessage(TCMessageHeaders.runTasks, [id, queue, data], transfers);
+    runTasks(id, data, transfers = [], queueId) {
+        let mode = 0;
+        let tid = "";
+        if (queueId) {
+            mode = 2;
+            tid = queueId;
+        }
+        this.sendMessage(TCMessageHeaders.runTasks, [id, ThreadComm.threadName, mode, tid, data], transfers);
+    }
+    runPromiseTasks(id, requestsID, onDone, data, transfers = []) {
+        PromiseTasks.addPromiseTakss(id, requestsID, onDone);
+        this.sendMessage(TCMessageHeaders.runTasks, [id, ThreadComm.threadName, 1, requestsID, data], transfers);
     }
     __syncQueue(id, sab) {
         this.sendMessage(TCMessageHeaders.internal, [
             TCInternalMessages.syncQueue,
+            ThreadComm.threadName,
             id,
             sab,
         ]);
@@ -133,6 +146,7 @@ export class CommBase {
     __unSyqncQueue(id) {
         this.sendMessage(TCMessageHeaders.internal, [
             TCInternalMessages.unSyncQueue,
+            ThreadComm.threadName,
             id,
         ]);
     }

@@ -22,11 +22,12 @@ export declare class CommBase {
     sendMessage(message: string | number, data?: any[], transfers?: any[]): void;
     listenForMessage(message: string | number, run: MessageFunction): void;
     connectToComm(commToConnectTo: CommBase): void;
-    runTasks<T>(id: string | number, data: T, transfers?: any[], queue?: string): void;
-    __syncQueue(id: string, sab: SharedArrayBuffer): void;
-    __unSyqncQueue(id: string): void;
-    syncData<T>(dataType: string, data: T, transfers?: any[]): void;
-    unSyncData<T>(dataType: string, data: T, transfers?: any[]): void;
+    runTasks<T>(id: string | number, data: T, transfers?: any[], queueId?: string): void;
+    runPromiseTasks<T>(id: string | number, requestsID: string, onDone: (data: any) => void, data: T, transfers?: any[]): void;
+    __syncQueue(id: string | number, sab: SharedArrayBuffer): void;
+    __unSyqncQueue(id: string | number): void;
+    syncData<T>(dataType: string | number, data: T, transfers?: any[]): void;
+    unSyncData<T>(dataType: string | number, data: T, transfers?: any[]): void;
     waitTillReady(): Promise<boolean>;
     onMessage(event: any): void;
 }

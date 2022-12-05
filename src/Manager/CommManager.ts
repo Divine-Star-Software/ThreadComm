@@ -12,6 +12,7 @@ import { ThreadComm } from "../ThreadComm.js";
 export class CommManager {
 	_totalComms = 0;
 	_currentCom = 0;
+	name = "";
 	__comms: CommBase[] = [];
 	__data: CommManagerData = {
 		name: "",
@@ -22,6 +23,7 @@ export class CommManager {
 
 	constructor(data: CommManagerData) {
 		this.__data = data;
+		this.name = data.name;
 	}
 
 	__throwError(message: string) {
@@ -90,11 +92,13 @@ export class CommManager {
 	}
 
 	__handleManagerMessage(data: any, event: any) {
-		this.messageFunctions[data[0]](data, event);
+		if (!this.messageFunctions[data[0]]) return;
+		this.messageFunctions[data[0]].forEach((_) => _(data, event));
 	}
 
 	listenForMessage(message: string | number, run: MessageFunction) {
-		this.messageFunctions[message] = run;
+		this.messageFunctions[message] ??= [];
+		this.messageFunctions[message].push(run);
 	}
 
 	sendMessageToAll(
@@ -111,10 +115,10 @@ export class CommManager {
 		id: string,
 		data: T,
 		transfers: any[] = [],
-		queue?: string
+		queueId?: string
 	) {
 		for (const comm of this.__comms) {
-			comm.runTasks(id, data, transfers, queue);
+			comm.runTasks(id, data, transfers, queueId);
 		}
 	}
 
@@ -123,15 +127,35 @@ export class CommManager {
 		data: T,
 		transfers: any[] = [],
 		threadNumber = -1,
-		queue?: string
+		queueId?: string
 	) {
 		if (threadNumber < 0) {
 			const comm = this.__comms[this._currentCom];
-			comm.runTasks(id, data, transfers, queue);
+			comm.runTasks(id, data, transfers, queueId);
 			return this.__handleCount();
 		} else {
 			const comm = this.__comms[threadNumber];
-			comm.runTasks(id, data, transfers, queue);
+			comm.runTasks(id, data, transfers, queueId);
+			return threadNumber;
+		}
+	}
+
+	runPromiseTasks<T>(
+		id: string | number,
+		requestsID: string,
+		onDone: (data: any) => void,
+		data: T,
+		transfers: any[] = [],
+		threadNumber = -1
+	) {
+		if (threadNumber < 0) {
+			const comm = this.__comms[this._currentCom];
+			comm.runPromiseTasks(id, requestsID, onDone, data, transfers);
+			return this.__handleCount();
+		} else {
+			const comm = this.__comms[threadNumber];
+			comm.runPromiseTasks(id, requestsID, onDone, data, transfers);
+			return threadNumber;
 		}
 	}
 
@@ -144,22 +168,42 @@ export class CommManager {
 		return countReturn;
 	}
 
-	addQueue<T>(id: string, associatedTasksId: string) {
+	addQueue<T>(
+		id: string | number,
+		associatedTasksId: string | number,
+		getQueueKey: ((data: T) => string) | null = null,
+		beforeRun: (data: T) => T = (data: T) => data,
+		afterRun: (data: T, thread: number) => void = (
+			data: T,
+			thread: number
+		) => {},
+		getThread: (data: T) => number = (data: T) => -1,
+		getTransfers: (data: T) => any[] = (data) => []
+	) {
 		if (this.__queues[id]) {
 			this.__throwError(`Queue with ${id} already exists.`);
 		}
 		const newQueue = new QueueManager<T>(
 			id,
 			(data, queueId) => {
-				this.runTask(associatedTasksId, data, [], -1, queueId);
+				data = beforeRun(data);
+				const thread = this.runTask(
+					associatedTasksId,
+					data,
+					getTransfers(data),
+					getThread(data),
+					queueId
+				);
+				afterRun(data, thread);
 			},
-			this
+			this,
+			getQueueKey
 		);
 		this.__queues[id] = newQueue;
 		return newQueue;
 	}
 
-	getQueue<T>(id: string) {
+	getQueue<T>(id: string | number) {
 		const queue = this.__queues[id];
 		if (!queue) {
 			this.__throwError(`Queue with ${id} does not exists.`);
@@ -167,26 +211,25 @@ export class CommManager {
 		return <QueueManager<T>>queue;
 	}
 
-	__syncQueue(id: string, sab: SharedArrayBuffer) {
+	__syncQueue(id: string | number, sab: SharedArrayBuffer) {
 		for (const comm of this.__comms) {
 			comm.__syncQueue(id, sab);
 		}
 	}
 
-	__unSyncQueue(id: string) {
+	__unSyncQueue(id: string | number) {
 		for (const comm of this.__comms) {
 			comm.__unSyqncQueue(id);
 		}
 	}
 
-	syncData<T>(dataType: string, data: T) {
-		console.log("SYNC DATA");
+	syncData<T>(dataType: string | number, data: T) {
 		for (const comm of this.__comms) {
 			comm.syncData(dataType, data);
 		}
 	}
 
-	unSyncData<T>(dataType: string, data: T) {
+	unSyncData<T>(dataType: string | number, data: T) {
 		for (const comm of this.__comms) {
 			comm.unSyncData(dataType, data);
 		}

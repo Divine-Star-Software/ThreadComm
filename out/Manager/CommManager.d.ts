@@ -6,6 +6,7 @@ import { QueueManager } from "../Queue/QueueManager.js";
 export declare class CommManager {
     _totalComms: number;
     _currentCom: number;
+    name: string;
     __comms: CommBase[];
     __data: CommManagerData;
     __queues: Record<string, QueueManager<any>>;
@@ -23,13 +24,14 @@ export declare class CommManager {
     __handleManagerMessage(data: any, event: any): void;
     listenForMessage(message: string | number, run: MessageFunction): void;
     sendMessageToAll(message: string | number, data?: any[], transfers?: any[]): void;
-    runTasksForAll<T>(id: string, data: T, transfers?: any[], queue?: string): void;
-    runTask<T>(id: string | number, data: T, transfers?: any[], threadNumber?: number, queue?: string): number | undefined;
+    runTasksForAll<T>(id: string, data: T, transfers?: any[], queueId?: string): void;
+    runTask<T>(id: string | number, data: T, transfers?: any[], threadNumber?: number, queueId?: string): number;
+    runPromiseTasks<T>(id: string | number, requestsID: string, onDone: (data: any) => void, data: T, transfers?: any[], threadNumber?: number): number;
     __handleCount(): number;
-    addQueue<T>(id: string, associatedTasksId: string): QueueManager<T>;
-    getQueue<T>(id: string): QueueManager<T>;
-    __syncQueue(id: string, sab: SharedArrayBuffer): void;
-    __unSyncQueue(id: string): void;
-    syncData<T>(dataType: string, data: T): void;
-    unSyncData<T>(dataType: string, data: T): void;
+    addQueue<T>(id: string | number, associatedTasksId: string | number, getQueueKey?: ((data: T) => string) | null, beforeRun?: (data: T) => T, afterRun?: (data: T, thread: number) => void, getThread?: (data: T) => number, getTransfers?: (data: T) => any[]): QueueManager<T>;
+    getQueue<T>(id: string | number): QueueManager<T>;
+    __syncQueue(id: string | number, sab: SharedArrayBuffer): void;
+    __unSyncQueue(id: string | number): void;
+    syncData<T>(dataType: string | number, data: T): void;
+    unSyncData<T>(dataType: string | number, data: T): void;
 }

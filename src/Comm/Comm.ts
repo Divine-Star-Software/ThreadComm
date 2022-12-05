@@ -7,6 +7,7 @@ import {
 	TCInternalMessages,
 	TCDataSyncMessages,
 } from "../Constants/Messages.js";
+import { PromiseTasks } from "../Tasks/PromiseTasks.js";
 
 export class CommBase {
 	environment: "node" | "browser" = "browser";
@@ -14,7 +15,6 @@ export class CommBase {
 	port: CommPortTypes | null = null;
 	messageFunctions: MessageRecord = {};
 	_manager: CommManager | null = null;
-
 	constructor(
 		public name: string,
 		public managerName = "worker",
@@ -74,7 +74,7 @@ export class CommBase {
 		}
 		const message = data[0];
 		if (this.messageFunctions[message]) {
-			this.messageFunctions[message](data, event);
+			this.messageFunctions[message].forEach((_) => _(data, event));
 		}
 		this.onMessage(event);
 	}
@@ -122,7 +122,8 @@ export class CommBase {
 	}
 
 	listenForMessage(message: string | number, run: MessageFunction) {
-		this.messageFunctions[message] = run;
+		this.messageFunctions[message] ??= [];
+		this.messageFunctions[message].push(run);
 	}
 
 	connectToComm(commToConnectTo: CommBase) {
@@ -149,26 +150,58 @@ export class CommBase {
 		);
 	}
 
-	runTasks<T>(id: string | number, data: T, transfers: any[] = [], queue?: string) {
-		this.sendMessage(TCMessageHeaders.runTasks, [id, queue, data], transfers);
+	runTasks<T>(
+		id: string | number,
+		data: T,
+		transfers: any[] = [],
+		queueId?: string
+	) {
+		let mode = 0;
+		let tid = "";
+		if (queueId) {
+			mode = 2;
+			tid = queueId;
+		}
+		this.sendMessage(
+			TCMessageHeaders.runTasks,
+			[id, ThreadComm.threadName, mode, tid, data],
+			transfers
+		);
 	}
 
-	__syncQueue(id: string, sab: SharedArrayBuffer) {
+	runPromiseTasks<T>(
+		id: string | number,
+		requestsID: string,
+		onDone: (data: any) => void,
+		data: T,
+		transfers: any[] = []
+	) {
+		PromiseTasks.addPromiseTakss(id, requestsID, onDone);
+		this.sendMessage(
+			TCMessageHeaders.runTasks,
+			[id, ThreadComm.threadName, 1, requestsID, data],
+			transfers
+		);
+	}
+
+	__syncQueue(id: string | number, sab: SharedArrayBuffer) {
 		this.sendMessage(TCMessageHeaders.internal, [
 			TCInternalMessages.syncQueue,
+			ThreadComm.threadName,
 			id,
 			sab,
 		]);
 	}
 
-	__unSyqncQueue(id: string) {
+	__unSyqncQueue(id: string | number) {
 		this.sendMessage(TCMessageHeaders.internal, [
 			TCInternalMessages.unSyncQueue,
+			ThreadComm.threadName,
 			id,
 		]);
 	}
 
-	syncData<T>(dataType: string, data: T, transfers?: any[]) {
+	syncData<T>(dataType: string | number, data: T, transfers?: any[]) {
 		this.sendMessage(
 			TCMessageHeaders.dataSync,
 			[TCDataSyncMessages.SyncData, dataType, data],
@@ -176,7 +209,7 @@ export class CommBase {
 		);
 	}
 
-	unSyncData<T>(dataType: string, data: T, transfers?: any[]) {
+	unSyncData<T>(dataType: string | number, data: T, transfers?: any[]) {
 		this.sendMessage(
 			TCMessageHeaders.dataSync,
 			[TCDataSyncMessages.SyncData, dataType, data],

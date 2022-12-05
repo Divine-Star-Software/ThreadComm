@@ -3,13 +3,18 @@ export class QueueManager {
     id;
     onRun;
     _manager;
+    getQueueKey;
     __queueData = {};
-    constructor(id, onRun, _manager) {
+    constructor(id, onRun, _manager, getQueueKey = null) {
         this.id = id;
         this.onRun = onRun;
         this._manager = _manager;
+        this.getQueueKey = getQueueKey;
     }
     __getQueueKey(data) {
+        if (this.getQueueKey !== null) {
+            return this.getQueueKey(data);
+        }
         if (Array.isArray(data)) {
             return data.toString();
         }
@@ -27,6 +32,8 @@ export class QueueManager {
     }
     addQueue(queueId) {
         const sab = new SharedArrayBuffer(4);
+        if (this.__queueData[queueId])
+            return false;
         this.__queueData[queueId] = {
             queue: new Queue(),
             map: {},
@@ -35,15 +42,18 @@ export class QueueManager {
         };
         const syncId = this._getSyncId(queueId);
         this._manager.__syncQueue(syncId, sab);
+        return true;
     }
     _getSyncId(queueId) {
-        return `${this._manager.__data.name}-${this.id}-${queueId}`;
+        return `${this.id}-${queueId}`;
     }
     removeQueue(queueId) {
         if (!this.__queueData[queueId])
-            return;
+            return false;
         delete this.__queueData[queueId];
-        this._manager.__unSyncQueue(queueId);
+        const syncId = this._getSyncId(queueId);
+        this._manager.__unSyncQueue(syncId);
+        return true;
     }
     add(data, queueId = "main") {
         const queueData = this.__getQueueData(queueId);
@@ -60,7 +70,7 @@ export class QueueManager {
         const queue = queueData.queue;
         const state = queueData.state;
         const syncId = this._getSyncId(queueId);
-        while (queue.first) {
+        while (true) {
             const data = queue.dequeue();
             if (!data)
                 break;
@@ -77,10 +87,15 @@ export class QueueManager {
             Atomics.add(state, 0, 1);
             this.onRun(data, syncId);
         }
+        this.__queueData[queueId].map = {};
         if (filter) {
             this.__queueData[queueId].queue = queue;
             this.__queueData[queueId].map = newMap;
         }
+    }
+    runAndAwait(queueId = "main", filter) {
+        this.run(queueId, filter);
+        return this.awaitAll(queueId);
     }
     awaitAll(queueId = "main") {
         const queueData = this.__getQueueData(queueId);
@@ -92,6 +107,15 @@ export class QueueManager {
                 }
             }, 1);
         });
+    }
+    onDone(queueId = "main", run) {
+        const queueData = this.__getQueueData(queueId);
+        const inte = setInterval(() => {
+            if (Atomics.load(queueData.state, 0) == 0) {
+                clearInterval(inte);
+                run();
+            }
+        }, 1);
     }
     isDone(queueId = "main") {
         const queueData = this.__getQueueData(queueId);

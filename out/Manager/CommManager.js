@@ -7,6 +7,7 @@ import { ThreadComm } from "../ThreadComm.js";
 export class CommManager {
     _totalComms = 0;
     _currentCom = 0;
+    name = "";
     __comms = [];
     __data = {
         name: "",
@@ -16,6 +17,7 @@ export class CommManager {
     messageFunctions = {};
     constructor(data) {
         this.__data = data;
+        this.name = data.name;
     }
     __throwError(message) {
         throw new Error(`[ThreadCommManager : ${this.__data.name}] ${message}`);
@@ -76,30 +78,46 @@ export class CommManager {
         return this.messageFunctions[data[0]] !== undefined;
     }
     __handleManagerMessage(data, event) {
-        this.messageFunctions[data[0]](data, event);
+        if (!this.messageFunctions[data[0]])
+            return;
+        this.messageFunctions[data[0]].forEach((_) => _(data, event));
     }
     listenForMessage(message, run) {
-        this.messageFunctions[message] = run;
+        this.messageFunctions[message] ??= [];
+        this.messageFunctions[message].push(run);
     }
     sendMessageToAll(message, data = [], transfers) {
         for (const comm of this.__comms) {
             comm.sendMessage(message, data, transfers);
         }
     }
-    runTasksForAll(id, data, transfers = [], queue) {
+    runTasksForAll(id, data, transfers = [], queueId) {
         for (const comm of this.__comms) {
-            comm.runTasks(id, data, transfers, queue);
+            comm.runTasks(id, data, transfers, queueId);
         }
     }
-    runTask(id, data, transfers = [], threadNumber = -1, queue) {
+    runTask(id, data, transfers = [], threadNumber = -1, queueId) {
         if (threadNumber < 0) {
             const comm = this.__comms[this._currentCom];
-            comm.runTasks(id, data, transfers, queue);
+            comm.runTasks(id, data, transfers, queueId);
             return this.__handleCount();
         }
         else {
             const comm = this.__comms[threadNumber];
-            comm.runTasks(id, data, transfers, queue);
+            comm.runTasks(id, data, transfers, queueId);
+            return threadNumber;
+        }
+    }
+    runPromiseTasks(id, requestsID, onDone, data, transfers = [], threadNumber = -1) {
+        if (threadNumber < 0) {
+            const comm = this.__comms[this._currentCom];
+            comm.runPromiseTasks(id, requestsID, onDone, data, transfers);
+            return this.__handleCount();
+        }
+        else {
+            const comm = this.__comms[threadNumber];
+            comm.runPromiseTasks(id, requestsID, onDone, data, transfers);
+            return threadNumber;
         }
     }
     __handleCount() {
@@ -110,13 +128,15 @@ export class CommManager {
         }
         return countReturn;
     }
-    addQueue(id, associatedTasksId) {
+    addQueue(id, associatedTasksId, getQueueKey = null, beforeRun = (data) => data, afterRun = (data, thread) => { }, getThread = (data) => -1, getTransfers = (data) => []) {
         if (this.__queues[id]) {
             this.__throwError(`Queue with ${id} already exists.`);
         }
         const newQueue = new QueueManager(id, (data, queueId) => {
-            this.runTask(associatedTasksId, data, [], -1, queueId);
-        }, this);
+            data = beforeRun(data);
+            const thread = this.runTask(associatedTasksId, data, getTransfers(data), getThread(data), queueId);
+            afterRun(data, thread);
+        }, this, getQueueKey);
         this.__queues[id] = newQueue;
         return newQueue;
     }
@@ -138,7 +158,6 @@ export class CommManager {
         }
     }
     syncData(dataType, data) {
-        console.log("SYNC DATA");
         for (const comm of this.__comms) {
             comm.syncData(dataType, data);
         }
